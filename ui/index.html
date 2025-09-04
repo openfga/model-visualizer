@@ -1,0 +1,250 @@
+<html>
+    <head><title>FGA Model Analyzer</title></head>
+    <script src="https://github.com/mdaines/viz-js/releases/download/release-viz-3.12.0/viz-standalone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.1/ace.js"></script>
+
+    <style>
+        div#input{
+            width: 100%;
+            height: 360px;
+        }
+        textarea#input{
+            width: 100%;
+            padding: 10px;
+            font-family: monospace;
+            line-height: 1.2;
+            letter-spacing: -0.2px;
+            font-size:1.2em;
+        }
+        div#viz{
+            padding: 40px 20px;
+        }
+        div#error{
+            color:red;
+            font-weight: bold;
+        }
+        div#error>svg{
+            display: block;
+            margin: 0 auto;
+        }
+        button{
+            width: 100%;
+            display: block;
+            cursor: pointer;
+        }
+        div#wrapper{
+            display: block;
+            width: 90%;
+            margin: 0 auto;
+            max-width: 700px;
+        }
+    </style>
+    <body>
+        <div id="wrapper">
+            <div id="input"></div>
+            <div id="controls">
+                <div class="control">  
+                    <input type="checkbox" id="show-node-type" onchange="render()" checked/>
+                    <label for="show-node-type">Node Type</label>
+                </div>
+                <div class="control">  
+                    <input type="checkbox" id="show-edge-type" onchange="render()" checked/>
+                    <label for="show-edge-type">Edge Type</label>
+                </div>
+                <div class="control">  
+                    <input type="checkbox" id="show-node-weights" onchange="render()" checked/>
+                    <label for="show-node-weights">Node Weights</label>
+                </div>
+                <div class="control">  
+                    <input type="checkbox" id="show-edge-weights" onchange="render()" checked/>
+                    <label for="show-edge-weights">Edge Weights</label>
+                </div>
+                <div class="control">  
+                    <input type="checkbox" id="show-node-wildcards" onchange="render()" checked/>
+                    <label for="show-node-wildcards">Node Wildcards</label>
+                </div>
+                <div class="control">  
+                    <input type="checkbox" id="show-edge-wildcards"onchange="render()" checked/>
+                    <label for="show-edge-wildcards">Edge Wildcards</label>
+                </div>
+            </div>
+            <button onclick="render()">Render</button>
+        </div>
+        <div id="error"></div>
+        <div id="viz"></div>
+    </body>
+
+    <script>
+        const render = async()=>{
+            const authorizationModelDSL = editor.getValue();
+            const resp = await fetch('/transform', {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ authorizationModelDSL })
+            });
+
+            if (resp.status == 500) {
+                document.getElementById("error").innerHTML = await resp.text();
+                return
+            }
+            document.getElementById("error").innerHTML = "";
+
+            const weightedGraph = await resp.json();
+
+            const options = {
+                showNodeType: document.getElementById("show-node-type").checked,
+                showEdgeType: document.getElementById("show-edge-type").checked,
+                showNodeWeights: document.getElementById("show-node-weights").checked,
+                showEdgeWeights: document.getElementById("show-edge-weights").checked,
+                showNodeWildcards: document.getElementById("show-node-wildcards").checked,
+                showEdgeWildcards: document.getElementById("show-edge-wildcards").checked
+            };
+            Viz.instance().then(viz => {
+                const svg = viz.renderSVGElement(convertToVizFormat(weightedGraph,options));
+                document.getElementById("viz").innerHTML = "";
+                document.getElementById("viz").appendChild(svg);
+            });
+        }
+
+        const convertToVizFormat = (input,options) => {
+            const graph = input.weightedGraph;
+            const edges = [];
+
+            const nodes = {}
+
+            for (const edgeGroup of Object.values(graph.Edges)) {
+                for (const edge of edgeGroup) {
+                const tail = edge.From?.UniqueLabel;
+            
+                if (!nodes[tail]) {
+                    const nodeWeightText = (()=>{
+                        if (!edge.From.Weights || !options.showNodeWeights){
+                            return ""
+                        }
+                        return Object.keys(edge.From.Weights).map(
+                            key=>"<b>"+key+"</b>: "+edge.From.Weights[key]
+                        ).join(", ").replaceAll("2147483647","∞")
+                    })()
+
+                    const label = edge.From.NodeType == "OperatorNodeType" ? edge.From.Label : edge.From.UniqueLabel;
+                    const color = edge.From.NodeType == "OperatorNodeType" ? "#d4d4d4" : "#000"
+                    const shape = edge.From.NodeType == "OperatorNodeType" ? "rectangle" : "oval"
+                    const nodeTypeText = (options.showNodeType ? edge.From.NodeType : "")
+
+                    const nodeWildcardText = (()=>{
+                        if (!options.showNodeWildcards || !edge.From.Wildcards || edge.From.Wildcards.length == 0){
+                            return ""
+                        }
+                        return "<br/><b>Wildcards: </b>" + edge.From.Wildcards.join(", ")
+                    })()
+
+                    nodes[tail] = { 
+                        name: tail, 
+                        attributes: {
+                            shape,
+                            color,
+                            label: {html:"<b>"+label+"</b>"+"<br/>"+nodeTypeText+"<br/>"+ nodeWeightText+ nodeWildcardText}
+                        }
+                    }
+                }
+
+                const head = edge.To?.UniqueLabel;
+                if (!nodes[head]) {
+                    const nodeWeightText = (()=>{
+                        if (!edge.To.Weights || !options.showNodeWeights){
+                            return ""
+                        }
+                        return Object.keys(edge.To.Weights).map(
+                            key=>"<b>"+key+"</b>: "+edge.To.Weights[key]
+                        ).join(", ").replaceAll("2147483647","∞")
+                    })()
+                    const nodeWildcardText = (()=>{
+                        if (!options.showNodeWildcards || !edge.To.Wildcards || edge.To.Wildcards.length == 0){
+                            return ""
+                        }
+                        return "<br/><b>Wildcards: </b>" + edge.To.Wildcards.join(", ")
+                    })()
+
+                    const label = edge.To.NodeType == "OperatorNodeType" ? edge.To.Label : edge.To.UniqueLabel;
+                    const color = edge.To.NodeType == "OperatorNodeType" ? "#d4d4d4" : "#000"
+                    const shape = edge.To.NodeType == "OperatorNodeType" ? "rectangle" : "oval"
+                    const nodeTypeText = (options.showNodeType ? edge.To.NodeType : "")
+
+                    nodes[head] = {
+                        name: head,
+                        attributes:{
+                            shape,
+                            color,
+                            label: {html:"<b>"+label+"</b>"+"<br/>"+nodeTypeText+"<br/>"+ nodeWeightText + nodeWildcardText}
+                        }
+                    }
+                }
+
+                const edgeWeightText = (()=>{
+                    if (!options.showEdgeWeights){
+                        return ""
+                    }
+                    return  Object.keys(edge.Weights).map(
+                        key=>"<b>"+key+"</b>: "+edge.Weights[key]
+                    ).join(", ").replaceAll("2147483647","∞") + "<br/>"
+                })()
+                
+                const edgeTypeText = options.showEdgeType ? edge.EdgeType : ""
+
+                const wildcardText = (()=>{
+                    if (!options.showEdgeWildcards || !edge.Wildcards || edge.Wildcards.length == 0){
+                        return ""
+                    }
+                    return "<b>Wildcards: </b>" + edge.Wildcards.join(", ")
+                })()
+
+                if (tail && head) {
+                    edges.push({ tail, head, attributes: {label: {html:edgeWeightText+edgeTypeText+"<br/>"+ wildcardText}}});
+                }
+                }
+            }
+
+            return {
+                directed: true,
+                nodes:Object.keys(nodes).map(key=>nodes[key]),
+                edges,
+            };
+        }
+
+        const editor = ace.edit("input");
+        editor.setOptions({ 
+            useSoftTabs: true, 
+            tabSize: 3,
+            displayIndentGuides: true,
+            enableAutoIndent: true
+        });
+        editor.commands.addCommand({
+            name: "submitOnCtrlEnter",
+            bindKey: { win: "Ctrl-Enter", mac: "Command-Enter" },
+            exec: render
+        });
+        editor.setValue(`model
+  schema 1.1
+
+type user
+type employee
+
+type group
+   relations
+      define member: [user] or member from parent
+      define parent: [group]
+
+type folder
+   relations
+      define viewer: [user]
+      define owner: [employee]
+
+type document
+  relations
+      define viewer: [user, group#member] or viewer from parent
+      define parent: [folder]`, -1);
+    new ResizeObserver(() => {
+        editor.resize();
+    }).observe(document.getElementById("editor"));
+    </script>
+</html>
