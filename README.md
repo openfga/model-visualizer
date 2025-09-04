@@ -20,3 +20,7 @@ A weighted graph assigns point values (from 1 to ∞) to nodes and edges. These 
  - **∞ (infinity):** recursive or cyclical behavior, resolution costs cannot be determined from the model alone
 
 The weighted graph is primarily an internal construct, designed to help the system coordinate resolution optimizations and improve query planning. It isn't required knowledge for an OpenFGA operator but can be a useful diagnostic tool for identifying potential performance bottlenecks in an authorization model.
+
+## License
+
+This project is licensed under the Apache-2.0 license. See the [LICENSE](https://github.com/openfga/language/blob/main/LICENSE) file for more info.
