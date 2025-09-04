@@ -1,6 +1,6 @@
 # OpenFGA Model Visualizer
 
-*In-browser visualizer for OpenFGA authorization models as a **weighted graph** which offers insights into its performance characteristics*
+*In-browser visualizer for OpenFGA authorization models as a **weighted graph** which offers insights into their performance characteristics*
 
 
 ![example screenshot of rendered weighted graph for an OpenFGA authorization model](/screenshot.png)
