@@ -77,6 +77,8 @@ func translateNode(node *graph.WeightedAuthorizationModelNode) *WeightedAuthoriz
 	case graph.SpecificTypeWildcard:
 		nodeType = "SpecificTypeWildcard"
 	}
+
+	fmt.Printf("Translating node: %+v\n", node)
 	return &WeightedAuthorizationModelNode{
 		Weights:     node.GetWeights(),
 		NodeType:    nodeType,

@@ -75,6 +75,7 @@
     </body>
 
     <script>
+        const selectedColour = 'rgb(250, 250, 184)';
         const render = async()=>{
             const authorizationModelDSL = editor.getValue();
             const resp = await fetch('/transform', {
@@ -103,6 +104,71 @@
                 const svg = viz.renderSVGElement(convertToVizFormat(weightedGraph,options));
                 document.getElementById("viz").innerHTML = "";
                 document.getElementById("viz").appendChild(svg);
+
+                 // Add click handlers to nodes after SVG is rendered
+                const nodeElements = svg.querySelectorAll('.node');
+                nodeElements.forEach(nodeElement => {
+                    nodeElement.style.cursor = 'pointer';
+                    nodeElement.addEventListener('click', (e) => {
+                        const ellipse = nodeElement.querySelector('ellipse');
+                        const polygon = nodeElement.querySelector('polygon');
+                        const titleElement = nodeElement.querySelector('title');
+
+                        // Check current color and toggle
+                        if (ellipse) {
+                            if (ellipse.style.fill === selectedColour) {
+                                ellipse.style.fill = 'white';
+                            } else {
+                                ellipse.style.fill = selectedColour;
+                            }
+                        }
+                        if (polygon) {
+                            if (polygon.style.fill === selectedColour) {
+                                if (titleElement && 
+                                    (titleElement.textContent.includes("union") || titleElement.textContent.includes("intersection") || titleElement.textContent.includes("exclusion"))
+                                ) {
+                                    polygon.style.fill = "white";
+                                } else {
+                                    polygon.style.fill = '#d4d4d4';
+                                }
+                            } else {
+                                polygon.style.fill = selectedColour;
+                            }
+                        }
+                    });
+                });
+
+                const edgeElements = svg.querySelectorAll('.edge');
+                edgeElements.forEach(edgeElement => {
+                    edgeElement.style.cursor = 'pointer';
+
+                    // Get the bounding box of the g element
+                    const bbox = edgeElement.getBBox();
+
+                    // Create a square rect element
+                    const square = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    square.setAttribute('x', bbox.x - 5); // Offset slightly to make it visible
+                    square.setAttribute('y', bbox.y - 5);
+                    square.setAttribute('width', bbox.width + 8); // Add padding
+                    square.setAttribute('height', bbox.height + 8);
+                    square.setAttribute('fill', 'none');
+                    // square.setAttribute('stroke', 'blue');
+                    square.setAttribute('stroke-width', '2');
+                    square.setAttribute('opacity', '0.5');
+
+                    // Insert the square before the g element
+                    edgeElement.before(square);
+
+                    edgeElement.addEventListener('click', (e) => {
+                        // ...existing code...
+                        if (square.style.fill === selectedColour) {
+                            square.style.fill = 'none';
+                            square.style.stroke = 'none';
+                        } else {
+                            square.style.fill = selectedColour;
+                        }
+                    });
+                });
             });
         }
 
@@ -206,7 +272,7 @@
 
             return {
                 directed: true,
-                nodes:Object.keys(nodes).map(key=>nodes[key]),
+                nodes: Object.keys(nodes).map(key=>nodes[key]),
                 edges,
             };
         }
