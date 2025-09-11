@@ -1,4 +1,4 @@
-module weighted-graph-viz
+module model-visualizer
 
 go 1.24.2
 
