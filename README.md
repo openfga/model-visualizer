@@ -5,6 +5,7 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
 [![Join our community](https://img.shields.io/badge/slack-cncf_%23openfga-40abb8.svg?logo=slack)](https://openfga.dev/community)
 [![Twitter](https://img.shields.io/twitter/follow/openfga?color=%23179CF0&logo=twitter&style=flat-square "@openfga on Twitter")](https://twitter.com/openfga)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fopenfga%2Fmodel-visualizer.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fopenfga%2Fmodel-visualizer?ref=badge_shield)
 
 
 ![example screenshot of rendered weighted graph for an OpenFGA authorization model](/screenshot.png)
@@ -28,3 +29,5 @@ The weighted graph is primarily an internal construct, designed to help the syst
 ## License
 
 This project is licensed under the Apache-2.0 license. See the [LICENSE](https://github.com/openfga/language/blob/main/LICENSE) file for more info.
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fopenfga%2Fmodel-visualizer.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fopenfga%2Fmodel-visualizer?ref=badge_large)
