@@ -1,4 +1,4 @@
-module model-visualizer
+module github.com/openfga/model-visualizer
 
 go 1.24.2
 
