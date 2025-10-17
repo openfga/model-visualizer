@@ -18,6 +18,7 @@
         }
         div#viz{
             padding: 40px 20px;
+            width: 1000px;
         }
         div#error{
             color:red;
@@ -37,6 +38,45 @@
             width: 90%;
             margin: 0 auto;
             max-width: 700px;
+        }
+
+        .wrapper {
+            display: flex;
+            padding: 20px
+        }
+        div#tuples{
+            padding: 20px;
+            border: 1px solid #ccc;
+            margin-left: 20px;
+            height: 360px;
+            overflow-y: auto;
+            background-color: #edeef0;
+            /* width: 300px; */
+            font-family: monospace;
+            /* font-size: 0.9em; */
+            white-space: pre;
+        }
+
+        div#tuples>table{
+            table-layout: fixed;
+            width: 500px;
+            border-collapse: collapse;
+        }
+        div#tuples td {
+            text-align: center;
+            padding: 2px;
+        }
+
+        .styled-border {
+            border: 2px solid #333;
+        }
+
+        .no-top-border {
+            border-top: none;
+        }
+
+        .no-bottom-border {
+            border-bottom: none;
         }
     </style>
     <body>
@@ -71,10 +111,70 @@
             <button onclick="render()">Render</button>
         </div>
         <div id="error"></div>
-        <div id="viz"></div>
+        <div class="wrapper">
+            <div id="viz"></div>
+            <!-- <div id="tuples">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Object</th>
+                            <th scope="col">Relation</th>
+                            <th scope="col">User</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div> -->
+        </div>
     </body>
 
     <script>
+        const tuples = [
+            // ["team:1#member@user:justin",
+            // "team:2#member@user:justin"],
+            // ["document:1#viewer@team:1#member",
+            // "document:2#viewer@team:2#member"],
+            // ["org:1#employee@user:justin",
+            // "org:2#employee@user:justin"],
+            // ["team:3#member@org:1#employee",
+            // "team:4#member@org:2#employee"],
+            // ["org:3#employee@team:3#member",
+            // "org:4#employee@team:4#member"],
+            // ["team:5#member@org:3#employee",
+            // "team:6#member@org:4#employee"],
+            // ["document:3#viewer@team:5#member",
+            // "document:4#viewer@team:6#member",
+            // "document:5#viewer@team:0#member"],
+        ]
+
+        tuples.flat().forEach(t=>{
+            const row = document.createElement("tr");
+            row.id = t;
+            const parts = t.split("#")
+            const object = parts[0]
+            const relation = parts[1]
+            const otherParts = t.split("@")
+            const user = otherParts[1]
+
+            console.log("object",object)
+            console.log("relation",relation)
+            console.log("user",user)
+
+            const objectCell = document.createElement("td");
+            objectCell.textContent = object;
+            const relationCell = document.createElement("td");
+            relationCell.textContent = relation;
+            const userCell = document.createElement("td");
+            userCell.textContent = user;
+
+            row.appendChild(objectCell);
+            row.appendChild(relationCell);
+            row.appendChild(userCell);
+
+            document.querySelector("#tuples tbody").appendChild(row);
+        })
+
         const selectedColour = 'rgb(250, 250, 184)';
         const render = async()=>{
             const authorizationModelDSL = editor.getValue();
@@ -171,6 +271,42 @@
                 });
             });
         }
+
+        let currentEL = 0;
+        let lastBorderedElement = null;
+
+        // window.addEventListener('keydown', function (event) {
+        //     if (event.key === 'Enter') {
+        //         const allTupleRows = document.querySelectorAll('#tuples tr');
+        //         allTupleRows.forEach(row => {
+        //             row.className = '';
+        //         });
+
+        //         const ts = tuples[currentEL];
+        //         ts.forEach((t, index)=>{
+        //             setTimeout(() => {
+        //                 const tupleRow = document.getElementById(t);
+        //                 if (tupleRow) {
+        //                     tupleRow.style.backgroundColor = selectedColour;
+        //                     tupleRow.classList.add('styled-border');
+        //                 }
+        //                 if (index !== 0) {
+        //                     tupleRow.classList.add('no-top-border');
+        //                 }
+        //                 if (lastBorderedElement) {
+        //                     lastBorderedElement.classList.add('no-bottom-border');
+        //                 }
+        //                 lastBorderedElement = tupleRow;
+        //             }, index * 500)
+        //         })
+
+        //         currentEL = (currentEL + 1) % tuples.length; // Move to the next
+
+        //         // Prevent default Enter behavior
+        //         event.preventDefault();
+        //     }
+        // });
+
 
         const convertToVizFormat = (input,options) => {
             const graph = input.weightedGraph;
