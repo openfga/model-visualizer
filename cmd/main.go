@@ -73,9 +73,13 @@ func translateNode(node *graph.WeightedAuthorizationModelNode) *WeightedAuthoriz
 	case graph.SpecificTypeAndRelation:
 		nodeType = "SpecificTypeAndRelation"
 	case graph.OperatorNode:
-		nodeType = "OperatorNodeType"
+		nodeType = "OperatorNode"
 	case graph.SpecificTypeWildcard:
 		nodeType = "SpecificTypeWildcard"
+	case graph.LogicalDirectGrouping:
+		nodeType = "LogicalDirectGrouping"
+	case graph.LogicalTTUGrouping:
+		nodeType = "LogicalTTUGrouping"
 	}
 	return &WeightedAuthorizationModelNode{
 		Weights:     node.GetWeights(),
@@ -90,13 +94,17 @@ func translateEdge(e *graph.WeightedAuthorizationModelEdge) *WeightedAuthorizati
 	var edgeType string
 	switch e.GetEdgeType() {
 	case graph.DirectEdge:
-		edgeType = "Direct Edge"
+		edgeType = "DirectEdge"
 	case graph.RewriteEdge:
-		edgeType = "Rewrite Edge"
+		edgeType = "RewriteEdge"
 	case graph.TTUEdge:
-		edgeType = "TTU Edge"
+		edgeType = "TTUEdge"
 	case graph.ComputedEdge:
-		edgeType = "Computed Edge"
+		edgeType = "ComputedEdge"
+	case graph.DirectLogicalEdge:
+		edgeType = "DirectLogicalEdge"
+	case graph.TTULogicalEdge:
+		edgeType = "TTULogicalEdge"
 	}
 
 	return &WeightedAuthorizationModelEdge{
