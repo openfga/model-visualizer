@@ -362,10 +362,14 @@ type document
         const sidebar = document.getElementById("sidebar");
         const resizer = document.getElementById("resizer");
 
+        let sidebarWidthSaveTimer;
         const setSidebarWidth = (width) => {
             const clamped = Math.max(MIN_SIDEBAR_WIDTH, width);
             sidebar.style.width = clamped + "px";
-            try { localStorage.setItem(SIDEBAR_WIDTH_KEY, clamped); } catch (e) {}
+            clearTimeout(sidebarWidthSaveTimer);
+            sidebarWidthSaveTimer = setTimeout(() => {
+                try { localStorage.setItem(SIDEBAR_WIDTH_KEY, String(clamped)); } catch (e) {}
+            }, 150);
         };
 
         function toggleSidebar() {
