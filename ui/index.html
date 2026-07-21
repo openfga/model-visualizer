@@ -400,11 +400,13 @@ type document
             if (!dragging) return;
             setSidebarWidth(e.clientX - sidebar.getBoundingClientRect().left);
         });
-        document.addEventListener("mouseup", () => {
+        const stopDragging = () => {
             if (!dragging) return;
             dragging = false;
             document.body.style.cursor = "";
             document.body.style.userSelect = "";
-        });
+        };
+        document.addEventListener("mouseup", stopDragging);
+        window.addEventListener("blur", stopDragging);
     </script>
 </html>
