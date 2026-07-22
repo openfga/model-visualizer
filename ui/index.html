@@ -4,78 +4,176 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.1/ace.js"></script>
 
     <style>
-        div#input{
-            width: 100%;
-            height: 360px;
+        html, body{
+            margin: 0;
+            height: 100%;
         }
-        textarea#input{
-            width: 100%;
+        div#layout{
+            display: flex;
+            height: 100vh;
+            align-items: stretch;
+        }
+        div#sidebar{
+            display: flex;
+            flex-direction: column;
+            width: 420px;
+            flex-shrink: 0;
             padding: 10px;
-            font-family: monospace;
-            line-height: 1.2;
-            letter-spacing: -0.2px;
-            font-size:1.2em;
+            box-sizing: border-box;
+            overflow: auto;
         }
-        div#viz{
-            padding: 40px 20px;
+        div#sidebar.collapsed{
+            display: none;
         }
-        div#error{
-            color:red;
-            font-weight: bold;
+        div#sidebar.collapsed + div#resizer{
+            display: none;
         }
-        div#error>svg{
-            display: block;
-            margin: 0 auto;
+        div#resizer{
+            flex: 0 0 auto;
+            width: 6px;
+            cursor: col-resize;
+            background: #ccc;
+        }
+        div#resizer:hover{
+            background: #999;
+        }
+        button#toggle-sidebar{
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            z-index: 10;
+            width: auto;
+            padding: 2px 8px;
+        }
+        div#input{
+            flex: 1 1 auto;
+            min-height: 200px;
+            width: 100%;
+        }
+        div#controls{
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin: 8px 0;
+        }
+        div.control{
+            white-space: nowrap;
         }
         button{
             width: 100%;
             display: block;
             cursor: pointer;
         }
-        div#wrapper{
+        div#main{
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        div#error{
+            color:red;
+            font-weight: bold;
+            padding: 10px;
+        }
+        div#error:empty{
+            display: none;
+        }
+        div#error>svg{
             display: block;
-            width: 90%;
             margin: 0 auto;
-            max-width: 700px;
+        }
+        div#viz{
+            flex: 1 1 auto;
+            overflow: auto;
+            padding: 20px;
         }
     </style>
     <body>
-        <div id="wrapper">
-            <div id="input"></div>
-            <div id="controls">
-                <div class="control">  
-                    <input type="checkbox" id="show-node-type" onchange="render()" checked/>
-                    <label for="show-node-type">Node Type</label>
+        <div id="layout">
+            <div id="sidebar">
+                <div id="input"></div>
+                <div id="controls">
+                    <div class="control">
+                        <input type="checkbox" id="show-node-type" onchange="render()" checked/>
+                        <label for="show-node-type">Node Type</label>
+                    </div>
+                    <div class="control">
+                        <input type="checkbox" id="show-edge-type" onchange="render()" checked/>
+                        <label for="show-edge-type">Edge Type</label>
+                    </div>
+                    <div class="control">
+                        <input type="checkbox" id="show-node-weights" onchange="render()" checked/>
+                        <label for="show-node-weights">Node Weights</label>
+                    </div>
+                    <div class="control">
+                        <input type="checkbox" id="show-edge-weights" onchange="render()" checked/>
+                        <label for="show-edge-weights">Edge Weights</label>
+                    </div>
+                    <div class="control">
+                        <input type="checkbox" id="show-node-wildcards" onchange="render()" checked/>
+                        <label for="show-node-wildcards">Node Wildcards</label>
+                    </div>
+                    <div class="control">
+                        <input type="checkbox" id="show-edge-wildcards" onchange="render()" checked/>
+                        <label for="show-edge-wildcards">Edge Wildcards</label>
+                    </div>
                 </div>
-                <div class="control">  
-                    <input type="checkbox" id="show-edge-type" onchange="render()" checked/>
-                    <label for="show-edge-type">Edge Type</label>
-                </div>
-                <div class="control">  
-                    <input type="checkbox" id="show-node-weights" onchange="render()" checked/>
-                    <label for="show-node-weights">Node Weights</label>
-                </div>
-                <div class="control">  
-                    <input type="checkbox" id="show-edge-weights" onchange="render()" checked/>
-                    <label for="show-edge-weights">Edge Weights</label>
-                </div>
-                <div class="control">  
-                    <input type="checkbox" id="show-node-wildcards" onchange="render()" checked/>
-                    <label for="show-node-wildcards">Node Wildcards</label>
-                </div>
-                <div class="control">  
-                    <input type="checkbox" id="show-edge-wildcards"onchange="render()" checked/>
-                    <label for="show-edge-wildcards">Edge Wildcards</label>
-                </div>
+                <button onclick="render()">Render</button>
             </div>
-            <button onclick="render()">Render</button>
+            <div id="resizer"></div>
+            <div id="main">
+                <button id="toggle-sidebar" onclick="toggleSidebar()" aria-label="Toggle sidebar" title="Toggle sidebar">☰</button>
+                <div id="error"></div>
+                <div id="viz"></div>
+            </div>
         </div>
-        <div id="error"></div>
-        <div id="viz"></div>
     </body>
 
     <script>
+        const MODEL_STORAGE_KEY = "fga-model-dsl";
+        const SETTINGS_STORAGE_KEY = "fga-display-settings";
+        const SETTING_IDS = [
+            "show-node-type",
+            "show-edge-type",
+            "show-node-weights",
+            "show-edge-weights",
+            "show-node-wildcards",
+            "show-edge-wildcards"
+        ];
+
+        const saveModel = () => {
+            try {
+                localStorage.setItem(MODEL_STORAGE_KEY, editor.getValue());
+            } catch (e) { /* storage unavailable */ }
+        };
+
+        const saveSettings = () => {
+            const settings = {};
+            for (const id of SETTING_IDS) {
+                settings[id] = document.getElementById(id).checked;
+            }
+            try {
+                localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+            } catch (e) { /* storage unavailable */ }
+        };
+
+        const restoreSettings = () => {
+            let settings;
+            try {
+                settings = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY));
+            } catch (e) { return; }
+            if (!settings) return;
+            for (const id of SETTING_IDS) {
+                if (typeof settings[id] === "boolean") {
+                    document.getElementById(id).checked = settings[id];
+                }
+            }
+        };
+
         const render = async()=>{
+            saveModel();
+            saveSettings();
             const authorizationModelDSL = editor.getValue();
             const resp = await fetch('/transform', {
                 method: "POST",
@@ -223,7 +321,7 @@
             bindKey: { win: "Ctrl-Enter", mac: "Command-Enter" },
             exec: render
         });
-        editor.setValue(`model
+        const DEFAULT_MODEL = `model
   schema 1.1
 
 type user
@@ -242,9 +340,73 @@ type folder
 type document
   relations
       define viewer: [user, group#member] or viewer from parent
-      define parent: [folder]`, -1);
+      define parent: [folder]`;
+
+        let savedModel = null;
+        try {
+            savedModel = localStorage.getItem(MODEL_STORAGE_KEY);
+        } catch (e) { /* storage unavailable */ }
+        editor.setValue(savedModel !== null ? savedModel : DEFAULT_MODEL, -1);
+
+        restoreSettings();
+
+        editor.session.on("change", saveModel);
     new ResizeObserver(() => {
         editor.resize();
-    }).observe(document.getElementById("editor"));
+    }).observe(document.getElementById("input"));
+
+        // --- Sidebar resize & collapse ---
+        const SIDEBAR_WIDTH_KEY = "fga-sidebar-width";
+        const SIDEBAR_COLLAPSED_KEY = "fga-sidebar-collapsed";
+        const MIN_SIDEBAR_WIDTH = 200;
+        const sidebar = document.getElementById("sidebar");
+        const resizer = document.getElementById("resizer");
+
+        let sidebarWidthSaveTimer;
+        const setSidebarWidth = (width) => {
+            const clamped = Math.max(MIN_SIDEBAR_WIDTH, width);
+            sidebar.style.width = clamped + "px";
+            clearTimeout(sidebarWidthSaveTimer);
+            sidebarWidthSaveTimer = setTimeout(() => {
+                try { localStorage.setItem(SIDEBAR_WIDTH_KEY, String(clamped)); } catch (e) {}
+            }, 150);
+        };
+
+        function toggleSidebar() {
+            const collapsed = sidebar.classList.toggle("collapsed");
+            try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0"); } catch (e) {}
+        }
+
+        // Restore persisted sidebar state
+        try {
+            const savedWidth = parseInt(localStorage.getItem(SIDEBAR_WIDTH_KEY), 10);
+            if (!isNaN(savedWidth)) {
+                sidebar.style.width = Math.max(MIN_SIDEBAR_WIDTH, savedWidth) + "px";
+            }
+            if (localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1") {
+                sidebar.classList.add("collapsed");
+            }
+        } catch (e) { /* storage unavailable */ }
+
+        // Drag-to-resize
+        let dragging = false;
+        resizer.addEventListener("mousedown", (e) => {
+            dragging = true;
+            e.preventDefault();
+            document.body.style.cursor = "col-resize";
+            document.body.style.userSelect = "none";
+        });
+        document.addEventListener("mousemove", (e) => {
+            if (!dragging) return;
+            setSidebarWidth(e.clientX - sidebar.getBoundingClientRect().left);
+        });
+        const stopDragging = () => {
+            if (!dragging) return;
+            dragging = false;
+            document.body.style.cursor = "";
+            document.body.style.userSelect = "";
+        };
+        document.addEventListener("mouseup", stopDragging);
+        window.addEventListener("blur", stopDragging);
     </script>
 </html>
