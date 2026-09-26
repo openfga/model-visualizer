@@ -2,11 +2,14 @@
     <head><title>OpenFGA Model Visualizer</title></head>
     <script src="https://github.com/mdaines/viz-js/releases/download/release-viz-3.12.0/viz-standalone.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.1/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.1/theme-tomorrow_night.min.js"></script>
 
     <style>
         html, body{
             margin: 0;
             height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            transition: background 0.2s ease, color 0.2s ease;
         }
         div#layout{
             display: flex;
@@ -49,20 +52,44 @@
             flex: 1 1 auto;
             min-height: 200px;
             width: 100%;
+            border-radius: 6px;
+            overflow: hidden;
         }
         div#controls{
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px 16px;
             margin: 8px 0;
+            padding: 14px 16px;
+            background: #f2f2f2;
+            border-radius: 8px;
         }
-        div.control{
-            white-space: nowrap;
+        div#controls .control{
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        div#controls .control input,
+        div#controls .control label{
+            cursor: pointer;
         }
         button{
             width: 100%;
             display: block;
             cursor: pointer;
+        }
+        button#render{
+            padding: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            color: #fff;
+            background: #4f46e5;
+            border: none;
+            border-radius: 6px;
+            transition: background 0.15s ease;
+        }
+        button#render:hover{
+            background: #4338ca;
         }
         div#main{
             flex: 1 1 auto;
@@ -88,8 +115,72 @@
             overflow: auto;
             padding: 20px;
         }
+        button#toggle-dark-mode{
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: #f2f2f2;
+            border: none;
+            border-radius: 50%;
+            padding: 0;
+            z-index: 20;
+        }
+        button#toggle-dark-mode svg{
+            width: 22px;
+            height: 22px;
+        }
+        #icon-moon{
+            display: none;
+        }
+        body.dark-mode{
+            background: #1e1e1e;
+            color: #ddd;
+        }
+        body.dark-mode div#controls{
+            background: #333;
+        }
+        body.dark-mode div#resizer{
+            background: #444;
+        }
+        body.dark-mode button{
+            background: #3a3a3a;
+            color: #ddd;
+            border: 1px solid #444;
+        }
+        body.dark-mode button#toggle-dark-mode{
+            background: #333;
+            border: none;
+        }
+        body.dark-mode #icon-sun{
+            display: none;
+        }
+        body.dark-mode #icon-moon{
+            display: block;
+        }
     </style>
     <body>
+        <button id="toggle-dark-mode" onclick="toggleDarkMode()" aria-label="Toggle dark mode" aria-pressed="false">
+            <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="12" cy="12" r="4"></circle>
+                <line x1="12" y1="2" x2="12" y2="5"></line>
+                <line x1="12" y1="19" x2="12" y2="22"></line>
+                <line x1="2" y1="12" x2="5" y2="12"></line>
+                <line x1="19" y1="12" x2="22" y2="12"></line>
+                <line x1="4.2" y1="4.2" x2="6.3" y2="6.3"></line>
+                <line x1="17.7" y1="17.7" x2="19.8" y2="19.8"></line>
+                <line x1="4.2" y1="19.8" x2="6.3" y2="17.7"></line>
+                <line x1="17.7" y1="6.3" x2="19.8" y2="4.2"></line>
+            </svg>
+            <svg id="icon-moon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20.4 14.7A8.5 8.5 0 0 1 9.3 3.6a8.5 8.5 0 1 0 11.1 11.1Z"></path>
+            </svg>
+        </button>
         <div id="layout">
             <div id="sidebar">
                 <div id="input"></div>
@@ -119,7 +210,7 @@
                         <label for="show-edge-wildcards">Edge Wildcards</label>
                     </div>
                 </div>
-                <button onclick="render()">Render</button>
+                <button id="render" onclick="render()">Render</button>
             </div>
             <div id="resizer"></div>
             <div id="main">
@@ -133,6 +224,7 @@
     <script>
         const MODEL_STORAGE_KEY = "fga-model-dsl";
         const SETTINGS_STORAGE_KEY = "fga-display-settings";
+        const DARK_MODE_STORAGE_KEY = "fga-dark-mode";
         const SETTING_IDS = [
             "show-node-type",
             "show-edge-type",
@@ -195,7 +287,8 @@
                 showNodeWeights: document.getElementById("show-node-weights").checked,
                 showEdgeWeights: document.getElementById("show-edge-weights").checked,
                 showNodeWildcards: document.getElementById("show-node-wildcards").checked,
-                showEdgeWildcards: document.getElementById("show-edge-wildcards").checked
+                showEdgeWildcards: document.getElementById("show-edge-wildcards").checked,
+                darkMode: document.body.classList.contains("dark-mode")
             };
             Viz.instance().then(viz => {
                 const svg = viz.renderSVGElement(convertToVizFormat(weightedGraph,options));
@@ -210,10 +303,15 @@
 
             const nodes = {}
 
+            const themeColor = options.darkMode ? "#ddd" : "#000"
+            const operatorBorder = options.darkMode ? "#888" : "#d4d4d4"
+            const wrapColor = (html) => "<font color=\"" + themeColor + "\">" + html + "</font>"
+            const fillAttrs = options.darkMode ? { style: "filled", fillcolor: "#141414" } : {}
+
             for (const edgeGroup of Object.values(graph.Edges)) {
                 for (const edge of edgeGroup) {
                 const tail = edge.From?.UniqueLabel;
-            
+
                 if (!nodes[tail]) {
                     const nodeWeightText = (()=>{
                         if (!edge.From.Weights || !options.showNodeWeights){
@@ -225,7 +323,7 @@
                     })()
 
                     const label = edge.From.NodeType == "OperatorNode" ? edge.From.Label : edge.From.UniqueLabel;
-                    const color = edge.From.NodeType == "OperatorNode" ? "#d4d4d4" : "#000"
+                    const color = edge.From.NodeType == "OperatorNode" ? operatorBorder : themeColor
                     const shape = edge.From.NodeType == "OperatorNode" ? "rectangle" : "oval"
                     const nodeTypeText = (options.showNodeType ? edge.From.NodeType : "")
 
@@ -236,12 +334,13 @@
                         return "<br/><b>Wildcards: </b>" + edge.From.Wildcards.join(", ")
                     })()
 
-                    nodes[tail] = { 
-                        name: tail, 
+                    nodes[tail] = {
+                        name: tail,
                         attributes: {
                             shape,
                             color,
-                            label: {html:"<b>"+label+"</b>"+"<br/>"+nodeTypeText+"<br/>"+ nodeWeightText+ nodeWildcardText}
+                            ...fillAttrs,
+                            label: {html: wrapColor("<b>"+label+"</b>"+"<br/>"+nodeTypeText+"<br/>"+ nodeWeightText+ nodeWildcardText)}
                         }
                     }
                 }
@@ -264,7 +363,7 @@
                     })()
 
                     const label = edge.To.NodeType == "OperatorNode" ? edge.To.Label : edge.To.UniqueLabel;
-                    const color = edge.To.NodeType == "OperatorNode" ? "#d4d4d4" : "#000"
+                    const color = edge.To.NodeType == "OperatorNode" ? operatorBorder : themeColor
                     const shape = edge.To.NodeType == "OperatorNode" ? "rectangle" : "oval"
                     const nodeTypeText = (options.showNodeType ? edge.To.NodeType : "")
 
@@ -273,7 +372,8 @@
                         attributes:{
                             shape,
                             color,
-                            label: {html:"<b>"+label+"</b>"+"<br/>"+nodeTypeText+"<br/>"+ nodeWeightText + nodeWildcardText}
+                            ...fillAttrs,
+                            label: {html: wrapColor("<b>"+label+"</b>"+"<br/>"+nodeTypeText+"<br/>"+ nodeWeightText + nodeWildcardText)}
                         }
                     }
                 }
@@ -286,7 +386,7 @@
                         key=>"<b>"+key+"</b>: "+edge.Weights[key]
                     ).join(", ").replaceAll("2147483647","∞") + "<br/>"
                 })()
-                
+
                 const edgeTypeText = options.showEdgeType ? edge.EdgeType : ""
 
                 const wildcardText = (()=>{
@@ -297,30 +397,62 @@
                 })()
 
                 if (tail && head) {
-                    edges.push({ tail, head, attributes: {label: {html:edgeWeightText+edgeTypeText+"<br/>"+ wildcardText}}});
+                    edges.push({ tail, head, attributes: {
+                        color: themeColor,
+                        label: {html: wrapColor(edgeWeightText+edgeTypeText+"<br/>"+ wildcardText)}
+                    }});
                 }
                 }
             }
 
             return {
                 directed: true,
+                graphAttributes: { bgcolor: "transparent" },
                 nodes:Object.keys(nodes).map(key=>nodes[key]),
                 edges,
             };
         }
 
+        const applyEditorTheme = (darkMode) => {
+            editor.setTheme(darkMode ? "ace/theme/tomorrow_night" : "ace/theme/textmate");
+        }
+
+        const toggleDarkMode = () => {
+            const darkMode = document.body.classList.toggle("dark-mode");
+            document.getElementById("toggle-dark-mode").setAttribute("aria-pressed", darkMode);
+            try {
+                localStorage.setItem(DARK_MODE_STORAGE_KEY, darkMode);
+            } catch (e) { /* storage unavailable */ }
+            applyEditorTheme(darkMode);
+            if (document.querySelector("#viz svg")) {
+                render();
+            }
+        }
+
         const editor = ace.edit("input");
-        editor.setOptions({ 
-            useSoftTabs: true, 
-            tabSize: 3,
+        editor.setOptions({
+            useSoftTabs: true,
+            tabSize: 2,
             displayIndentGuides: true,
-            enableAutoIndent: true
+            enableAutoIndent: true,
+            fontSize: "0.8em"
         });
         editor.commands.addCommand({
             name: "submitOnCtrlEnter",
             bindKey: { win: "Ctrl-Enter", mac: "Command-Enter" },
             exec: render
         });
+
+        let darkModePreference = false;
+        try {
+            darkModePreference = localStorage.getItem(DARK_MODE_STORAGE_KEY) === "true";
+        } catch (e) { /* storage unavailable */ }
+        if (darkModePreference) {
+            document.body.classList.add("dark-mode");
+            document.getElementById("toggle-dark-mode").setAttribute("aria-pressed", "true");
+        }
+        applyEditorTheme(darkModePreference);
+
         const DEFAULT_MODEL = `model
   schema 1.1
 
@@ -328,19 +460,19 @@ type user
 type employee
 
 type group
-   relations
-      define member: [user] or member from parent
-      define parent: [group]
+  relations
+    define member: [user] or member from parent
+    define parent: [group]
 
 type folder
-   relations
-      define viewer: [user]
-      define owner: [employee]
+  relations
+    define viewer: [user]
+    define owner: [employee]
 
 type document
   relations
-      define viewer: [user, group#member] or viewer from parent
-      define parent: [folder]`;
+    define viewer: [user, group#member] or viewer from parent
+    define parent: [folder]`;
 
         let savedModel = null;
         try {
