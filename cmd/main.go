@@ -82,11 +82,14 @@ func translateNode(node *graph.WeightedAuthorizationModelNode) *WeightedAuthoriz
 		nodeType = "LogicalTTUGrouping"
 	}
 	return &WeightedAuthorizationModelNode{
-		Weights:     node.GetWeights(),
-		NodeType:    nodeType,
-		Label:       node.GetLabel(),
-		UniqueLabel: node.GetUniqueLabel(),
-		Wildcards:   node.GetWildcards(),
+		Weights:            node.GetWeights(),
+		NodeType:           nodeType,
+		Label:              node.GetLabel(),
+		UniqueLabel:        node.GetUniqueLabel(),
+		Wildcards:          node.GetWildcards(),
+		RecursiveRelation:  node.GetRecursiveRelation(),
+		IsPartOfTupleCycle: node.IsPartOfTupleCycle(),
+		DirectAssigns:      node.GetDirectAssigns(),
 	}
 }
 
@@ -108,13 +111,16 @@ func translateEdge(e *graph.WeightedAuthorizationModelEdge) *WeightedAuthorizati
 	}
 
 	return &WeightedAuthorizationModelEdge{
-		Weights:          e.GetWeights(),
-		EdgeType:         edgeType,
-		TuplesetRelation: e.GetTuplesetRelation(),
-		From:             translateNode(e.GetFrom()),
-		To:               translateNode(e.GetTo()),
-		Wildcards:        e.GetWildcards(),
-		Conditions:       e.GetConditions(),
+		Weights:            e.GetWeights(),
+		EdgeType:           edgeType,
+		TuplesetRelation:   e.GetTuplesetRelation(),
+		From:               translateNode(e.GetFrom()),
+		To:                 translateNode(e.GetTo()),
+		Wildcards:          e.GetWildcards(),
+		Conditions:         e.GetConditions(),
+		RecursiveRelation:  e.GetRecursiveRelation(),
+		IsPartOfTupleCycle: e.IsPartOfTupleCycle(),
+		RelationDefinition: e.GetRelationDefinition(),
 	}
 }
 
@@ -171,19 +177,25 @@ const (
 )
 
 type WeightedAuthorizationModelEdge struct {
-	Weights          map[string]int
-	EdgeType         string
-	TuplesetRelation string
-	From             *WeightedAuthorizationModelNode
-	To               *WeightedAuthorizationModelNode
-	Wildcards        []string
-	Conditions       []string
+	Weights            map[string]int
+	EdgeType           string
+	TuplesetRelation   string
+	From               *WeightedAuthorizationModelNode
+	To                 *WeightedAuthorizationModelNode
+	Wildcards          []string
+	Conditions         []string
+	RecursiveRelation  string
+	IsPartOfTupleCycle bool
+	RelationDefinition string
 }
 
 type WeightedAuthorizationModelNode struct {
-	Weights     map[string]int
-	NodeType    string
-	Label       string
-	UniqueLabel string
-	Wildcards   []string
+	Weights            map[string]int
+	NodeType           string
+	Label              string
+	UniqueLabel        string
+	Wildcards          []string
+	RecursiveRelation  string
+	IsPartOfTupleCycle bool
+	DirectAssigns      []string
 }

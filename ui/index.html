@@ -56,13 +56,29 @@
             overflow: hidden;
         }
         div#controls{
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 10px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
             margin: 8px 0;
-            padding: 14px 16px;
+        }
+        div#controls .control-group{
+            padding: 6px 14px 14px;
             background: #f2f2f2;
+            border: none;
             border-radius: 8px;
+        }
+        div#controls .control-group legend{
+            font-weight: 600;
+            font-size: 0.78em;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            opacity: 0.65;
+            padding: 0 4px;
+        }
+        div#controls .control-grid{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px 16px;
         }
         div#controls .control{
             display: flex;
@@ -142,7 +158,7 @@
             background: #1e1e1e;
             color: #ddd;
         }
-        body.dark-mode div#controls{
+        body.dark-mode div#controls .control-group{
             background: #333;
         }
         body.dark-mode div#resizer{
@@ -185,30 +201,72 @@
             <div id="sidebar">
                 <div id="input"></div>
                 <div id="controls">
-                    <div class="control">
-                        <input type="checkbox" id="show-node-type" onchange="render()" checked/>
-                        <label for="show-node-type">Node Type</label>
-                    </div>
-                    <div class="control">
-                        <input type="checkbox" id="show-edge-type" onchange="render()" checked/>
-                        <label for="show-edge-type">Edge Type</label>
-                    </div>
-                    <div class="control">
-                        <input type="checkbox" id="show-node-weights" onchange="render()" checked/>
-                        <label for="show-node-weights">Node Weights</label>
-                    </div>
-                    <div class="control">
-                        <input type="checkbox" id="show-edge-weights" onchange="render()" checked/>
-                        <label for="show-edge-weights">Edge Weights</label>
-                    </div>
-                    <div class="control">
-                        <input type="checkbox" id="show-node-wildcards" onchange="render()" checked/>
-                        <label for="show-node-wildcards">Node Wildcards</label>
-                    </div>
-                    <div class="control">
-                        <input type="checkbox" id="show-edge-wildcards" onchange="render()" checked/>
-                        <label for="show-edge-wildcards">Edge Wildcards</label>
-                    </div>
+                    <fieldset class="control-group">
+                        <legend>Nodes</legend>
+                        <div class="control-grid">
+                            <div class="control">
+                                <input type="checkbox" id="show-node-type" onchange="render()" checked/>
+                                <label for="show-node-type">Type</label>
+                            </div>
+                            <div class="control">
+                                <input type="checkbox" id="show-node-weights" onchange="render()" checked/>
+                                <label for="show-node-weights">Weights</label>
+                            </div>
+                            <div class="control">
+                                <input type="checkbox" id="show-node-wildcards" onchange="render()" checked/>
+                                <label for="show-node-wildcards">Wildcards</label>
+                            </div>
+                            <div class="control">
+                                <input type="checkbox" id="show-node-recursive-relation" onchange="render()" checked/>
+                                <label for="show-node-recursive-relation">Recursive Relation</label>
+                            </div>
+                            <div class="control">
+                                <input type="checkbox" id="show-node-tuple-cycle" onchange="render()" checked/>
+                                <label for="show-node-tuple-cycle">Tuple Cycle</label>
+                            </div>
+                            <div class="control">
+                                <input type="checkbox" id="show-node-direct-assigns" onchange="render()"/>
+                                <label for="show-node-direct-assigns">Direct Assigns</label>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset class="control-group">
+                        <legend>Edges</legend>
+                        <div class="control-grid">
+                            <div class="control">
+                                <input type="checkbox" id="show-edge-type" onchange="render()" checked/>
+                                <label for="show-edge-type">Type</label>
+                            </div>
+                            <div class="control">
+                                <input type="checkbox" id="show-edge-weights" onchange="render()" checked/>
+                                <label for="show-edge-weights">Weights</label>
+                            </div>
+                            <div class="control">
+                                <input type="checkbox" id="show-edge-wildcards" onchange="render()" checked/>
+                                <label for="show-edge-wildcards">Wildcards</label>
+                            </div>
+                            <div class="control">
+                                <input type="checkbox" id="show-edge-tupleset-relation" onchange="render()"/>
+                                <label for="show-edge-tupleset-relation">Tupleset Relation</label>
+                            </div>
+                            <div class="control">
+                                <input type="checkbox" id="show-edge-conditions" onchange="render()"/>
+                                <label for="show-edge-conditions">Conditions</label>
+                            </div>
+                            <div class="control">
+                                <input type="checkbox" id="show-edge-relation-definition" onchange="render()"/>
+                                <label for="show-edge-relation-definition">Relation Definition</label>
+                            </div>
+                            <div class="control">
+                                <input type="checkbox" id="show-edge-recursive-relation" onchange="render()"/>
+                                <label for="show-edge-recursive-relation">Recursive Relation</label>
+                            </div>
+                            <div class="control">
+                                <input type="checkbox" id="show-edge-tuple-cycle" onchange="render()" checked/>
+                                <label for="show-edge-tuple-cycle">Tuple Cycle</label>
+                            </div>
+                        </div>
+                    </fieldset>
                 </div>
                 <button id="render" onclick="render()">Render</button>
             </div>
@@ -231,7 +289,15 @@
             "show-node-weights",
             "show-edge-weights",
             "show-node-wildcards",
-            "show-edge-wildcards"
+            "show-edge-wildcards",
+            "show-node-recursive-relation",
+            "show-node-tuple-cycle",
+            "show-node-direct-assigns",
+            "show-edge-tupleset-relation",
+            "show-edge-conditions",
+            "show-edge-relation-definition",
+            "show-edge-recursive-relation",
+            "show-edge-tuple-cycle"
         ];
 
         const saveModel = () => {
@@ -288,6 +354,14 @@
                 showEdgeWeights: document.getElementById("show-edge-weights").checked,
                 showNodeWildcards: document.getElementById("show-node-wildcards").checked,
                 showEdgeWildcards: document.getElementById("show-edge-wildcards").checked,
+                showNodeRecursiveRelation: document.getElementById("show-node-recursive-relation").checked,
+                showNodeTupleCycle: document.getElementById("show-node-tuple-cycle").checked,
+                showNodeDirectAssigns: document.getElementById("show-node-direct-assigns").checked,
+                showEdgeTuplesetRelation: document.getElementById("show-edge-tupleset-relation").checked,
+                showEdgeConditions: document.getElementById("show-edge-conditions").checked,
+                showEdgeRelationDefinition: document.getElementById("show-edge-relation-definition").checked,
+                showEdgeRecursiveRelation: document.getElementById("show-edge-recursive-relation").checked,
+                showEdgeTupleCycle: document.getElementById("show-edge-tuple-cycle").checked,
                 darkMode: document.body.classList.contains("dark-mode")
             };
             Viz.instance().then(viz => {
@@ -307,6 +381,20 @@
             const operatorBorder = options.darkMode ? "#888" : "#d4d4d4"
             const wrapColor = (html) => "<font color=\"" + themeColor + "\">" + html + "</font>"
             const fillAttrs = options.darkMode ? { style: "filled", fillcolor: "#141414" } : {}
+
+            const nodeExtraText = (node) => {
+                let out = ""
+                if (options.showNodeRecursiveRelation && node.RecursiveRelation) {
+                    out += "<br/><b>Recursive Relation: </b>" + node.RecursiveRelation
+                }
+                if (options.showNodeTupleCycle && node.IsPartOfTupleCycle) {
+                    out += "<br/><b>Tuple Cycle: </b>yes"
+                }
+                if (options.showNodeDirectAssigns && node.DirectAssigns && node.DirectAssigns.length > 0) {
+                    out += "<br/><b>Direct Assigns: </b>" + node.DirectAssigns.join(", ")
+                }
+                return out
+            }
 
             for (const edgeGroup of Object.values(graph.Edges)) {
                 for (const edge of edgeGroup) {
@@ -340,7 +428,7 @@
                             shape,
                             color,
                             ...fillAttrs,
-                            label: {html: wrapColor("<b>"+label+"</b>"+"<br/>"+nodeTypeText+"<br/>"+ nodeWeightText+ nodeWildcardText)}
+                            label: {html: wrapColor("<b>"+label+"</b>"+"<br/>"+nodeTypeText+"<br/>"+ nodeWeightText+ nodeWildcardText + nodeExtraText(edge.From))}
                         }
                     }
                 }
@@ -373,7 +461,7 @@
                             shape,
                             color,
                             ...fillAttrs,
-                            label: {html: wrapColor("<b>"+label+"</b>"+"<br/>"+nodeTypeText+"<br/>"+ nodeWeightText + nodeWildcardText)}
+                            label: {html: wrapColor("<b>"+label+"</b>"+"<br/>"+nodeTypeText+"<br/>"+ nodeWeightText + nodeWildcardText + nodeExtraText(edge.To))}
                         }
                     }
                 }
@@ -396,10 +484,30 @@
                     return "<b>Wildcards: </b>" + edge.Wildcards.join(", ")
                 })()
 
+                const edgeExtraText = (()=>{
+                    let out = ""
+                    if (options.showEdgeTuplesetRelation && edge.TuplesetRelation) {
+                        out += "<br/><b>Tupleset Relation: </b>" + edge.TuplesetRelation
+                    }
+                    if (options.showEdgeConditions && edge.Conditions && edge.Conditions.length > 0) {
+                        out += "<br/><b>Conditions: </b>" + edge.Conditions.map(c => c === "" ? "(none)" : c).join(", ")
+                    }
+                    if (options.showEdgeRelationDefinition && edge.RelationDefinition) {
+                        out += "<br/><b>Relation Definition: </b>" + edge.RelationDefinition
+                    }
+                    if (options.showEdgeRecursiveRelation && edge.RecursiveRelation) {
+                        out += "<br/><b>Recursive Relation: </b>" + edge.RecursiveRelation
+                    }
+                    if (options.showEdgeTupleCycle && edge.IsPartOfTupleCycle) {
+                        out += "<br/><b>Tuple Cycle: </b>yes"
+                    }
+                    return out
+                })()
+
                 if (tail && head) {
                     edges.push({ tail, head, attributes: {
                         color: themeColor,
-                        label: {html: wrapColor(edgeWeightText+edgeTypeText+"<br/>"+ wildcardText)}
+                        label: {html: wrapColor(edgeWeightText+edgeTypeText+"<br/>"+ wildcardText + edgeExtraText)}
                     }});
                 }
                 }
