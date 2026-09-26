@@ -165,7 +165,7 @@
         }
     </style>
     <body>
-        <button id="toggle-dark-mode" onclick="toggleDarkMode()" aria-label="Toggle dark mode">
+        <button id="toggle-dark-mode" onclick="toggleDarkMode()" aria-label="Toggle dark mode" aria-pressed="false">
             <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                 <circle cx="12" cy="12" r="4"></circle>
                 <line x1="12" y1="2" x2="12" y2="5"></line>
@@ -303,8 +303,8 @@
 
             const nodes = {}
 
-            const themeColor = options.darkMode ? "#dddddd" : "#000"
-            const operatorBorder = options.darkMode ? "#888888" : "#d4d4d4"
+            const themeColor = options.darkMode ? "#ddd" : "#000"
+            const operatorBorder = options.darkMode ? "#888" : "#d4d4d4"
             const wrapColor = (html) => "<font color=\"" + themeColor + "\">" + html + "</font>"
             const fillAttrs = options.darkMode ? { style: "filled", fillcolor: "#141414" } : {}
 
@@ -419,6 +419,7 @@
 
         const toggleDarkMode = () => {
             const darkMode = document.body.classList.toggle("dark-mode");
+            document.getElementById("toggle-dark-mode").setAttribute("aria-pressed", darkMode);
             try {
                 localStorage.setItem(DARK_MODE_STORAGE_KEY, darkMode);
             } catch (e) { /* storage unavailable */ }
@@ -448,6 +449,7 @@
         } catch (e) { /* storage unavailable */ }
         if (darkModePreference) {
             document.body.classList.add("dark-mode");
+            document.getElementById("toggle-dark-mode").setAttribute("aria-pressed", "true");
         }
         applyEditorTheme(darkModePreference);
 
